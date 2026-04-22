@@ -2740,20 +2740,44 @@
 
     // ============ ACHIEVEMENTS ============
     const ACH_DEFS = [
+        // Single-game saves
         { id: 'first_save',       icon: '🥅', name: 'First Save',         desc: 'Save your first ball',         check: s => s.totalSaves >= 1 },
         { id: 'saves_10',         icon: '🧤', name: 'On a Roll',           desc: 'Score 10 in one game',         check: s => s.bestGameScore >= 10 },
         { id: 'saves_25',         icon: '⭐', name: 'Wall of Defense',     desc: 'Score 25 in one game',         check: s => s.bestGameScore >= 25 },
         { id: 'saves_50',         icon: '🏅', name: 'Unstoppable',         desc: 'Score 50 in one game',         check: s => s.bestGameScore >= 50 },
+        { id: 'saves_75',         icon: '🛡️', name: 'Brick Wall',          desc: 'Score 75 in one game',         check: s => s.bestGameScore >= 75 },
+        { id: 'saves_100',        icon: '💎', name: 'Century',             desc: 'Score 100 in one game',        check: s => s.bestGameScore >= 100 },
+        { id: 'saves_150',        icon: '👽', name: 'Superhuman',          desc: 'Score 150 in one game',        check: s => s.bestGameScore >= 150 },
+        // Streaks
         { id: 'streak_5',         icon: '🔥', name: 'Hot Streak',          desc: '5 saves in a row',             check: s => s.bestStreak >= 5 },
         { id: 'streak_10',        icon: '💥', name: 'Untouchable',         desc: '10 saves in a row',            check: s => s.bestStreak >= 10 },
+        { id: 'streak_20',        icon: '⚡', name: 'Lightning Hands',     desc: '20 saves in a row',            check: s => s.bestStreak >= 20 },
+        { id: 'streak_30',        icon: '🌀', name: 'In The Zone',         desc: '30 saves in a row',            check: s => s.bestStreak >= 30 },
+        { id: 'streak_50',        icon: '🧙', name: 'Wizard',              desc: '50 saves in a row',            check: s => s.bestStreak >= 50 },
+        // Games played
         { id: 'first_game',       icon: '🎮', name: 'Welcome',             desc: 'Play your first game',         check: s => s.gamesPlayed >= 1 },
         { id: 'games_10',         icon: '🎯', name: 'Regular',             desc: 'Play 10 games',                check: s => s.gamesPlayed >= 10 },
         { id: 'games_50',         icon: '🏟️', name: 'Veteran',             desc: 'Play 50 games',                check: s => s.gamesPlayed >= 50 },
+        { id: 'games_100',        icon: '🎖️', name: 'Dedicated',           desc: 'Play 100 games',               check: s => s.gamesPlayed >= 100 },
+        { id: 'games_250',        icon: '🏛️', name: 'Hall of Famer',       desc: 'Play 250 games',               check: s => s.gamesPlayed >= 250 },
+        // Lifetime saves
+        { id: 'lifetime_100',     icon: '💪', name: 'Hundred Club',        desc: '100 total saves (lifetime)',   check: s => s.totalSaves >= 100 },
+        { id: 'lifetime_500',     icon: '🦾', name: 'Iron Gloves',         desc: '500 total saves (lifetime)',   check: s => s.totalSaves >= 500 },
+        { id: 'lifetime_1000',    icon: '🗿', name: 'Monument',            desc: '1000 total saves (lifetime)',  check: s => s.totalSaves >= 1000 },
+        // Friends
         { id: 'first_friend',     icon: '🤝', name: 'Making Friends',      desc: 'Add your first friend',        check: s => s.friendsAdded >= 1 },
+        { id: 'friends_5',        icon: '🫂', name: 'Squad',               desc: 'Add 5 friends',                check: s => s.friendsAdded >= 5 },
+        { id: 'friends_10',       icon: '🎪', name: 'Social Butterfly',    desc: 'Add 10 friends',               check: s => s.friendsAdded >= 10 },
+        // Challenges
         { id: 'challenge_win',    icon: '⚔️', name: 'Challenger',          desc: 'Beat a friend\'s challenge',    check: s => s.challengesWon >= 1 },
         { id: 'challenges_5',     icon: '👑', name: 'Challenge Master',    desc: 'Beat 5 challenges',            check: s => s.challengesWon >= 5 },
+        { id: 'challenges_15',    icon: '🗡️', name: 'Duelist',             desc: 'Beat 15 challenges',           check: s => s.challengesWon >= 15 },
+        { id: 'challenges_50',    icon: '🎭', name: 'Legend of Challenges', desc: 'Beat 50 challenges',          check: s => s.challengesWon >= 50 },
+        // Head-to-head
         { id: 'h2h_win',          icon: '🥇', name: 'Head-to-Head Win',    desc: 'Win an H2H match',             check: s => s.h2hWon >= 1 },
-        { id: 'h2h_5',            icon: '🏆', name: 'H2H Champion',         desc: 'Win 5 H2H matches',            check: s => s.h2hWon >= 5 }
+        { id: 'h2h_5',            icon: '🏆', name: 'H2H Champion',         desc: 'Win 5 H2H matches',            check: s => s.h2hWon >= 5 },
+        { id: 'h2h_15',           icon: '🥊', name: 'Rivalry',              desc: 'Win 15 H2H matches',           check: s => s.h2hWon >= 15 },
+        { id: 'h2h_50',           icon: '🐐', name: 'The GOAT',             desc: 'Win 50 H2H matches',           check: s => s.h2hWon >= 50 }
     ];
 
     let userStats = {
