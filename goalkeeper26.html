@@ -366,6 +366,48 @@
         .ach-card.locked .ach-icon { filter: grayscale(1); }
 
         #achievementsBtn { background: #c0392b; }
+        #playersBtn { background: #8e44ad; }
+
+        /* Players screen */
+        #playersScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column; align-items: center; justify-content: flex-start;
+            z-index: 30; background: rgba(26, 26, 46, 0.92); pointer-events: auto;
+            overflow-y: auto; padding: 30px 20px;
+        }
+        #playersScreen > * { flex-shrink: 0; }
+        #playersScreen::before, #playersScreen::after {
+            content: ""; flex: 1 1 0; min-height: 20px;
+        }
+        #playersScreen.visible { display: flex; }
+        #playersScreen h2 { color: #e0e0e0; font-size: 36px; margin-bottom: 10px; }
+        #playersFilterInput {
+            width: 420px; max-width: 95%;
+            padding: 10px 14px; font-size: 16px; margin-bottom: 14px;
+            color: #fff; background: rgba(255, 255, 255, 0.12);
+            border: 2px solid #3a7bd5; border-radius: 8px; outline: none;
+        }
+        #playersFilterInput:focus { border-color: #5c9eff; }
+        #playersList { width: 460px; max-width: 95%; }
+        .player-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; background: rgba(255, 255, 255, 0.06);
+            border-radius: 8px; margin-bottom: 6px; color: #fff; font-size: 16px;
+            cursor: pointer;
+        }
+        .player-row:hover { background: rgba(255, 255, 255, 0.12); }
+        .player-row.is-you { outline: 2px solid #5c9eff; }
+        .player-row.is-friend { background: rgba(39, 174, 96, 0.18); }
+        .player-row .p-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .player-row .p-you-tag { color: #5c9eff; font-size: 12px; font-weight: bold; }
+        .player-row .p-friend-tag { color: #2ecc71; font-size: 12px; font-weight: bold; }
+        .player-row .p-best { color: #ffcc02; font-weight: bold; font-size: 14px; }
+        .player-row .p-add {
+            padding: 6px 12px; font-size: 12px; border: none; border-radius: 6px;
+            cursor: pointer; color: #fff; font-weight: bold; background: #3a7bd5;
+        }
+        .player-row .p-add:hover { background: #5c9eff; }
+        .player-row .p-add:disabled { background: #555; cursor: not-allowed; }
 
         /* Toast */
         #achievementToast {
@@ -466,6 +508,7 @@
     <button class="btn-small" id="friendsBtn">Friends</button>
     <button class="btn-small" id="challengesBtn">Challenges<span class="ch-badge" id="chBadge">0</span></button>
     <button class="btn-small" id="achievementsBtn">Achievements</button>
+    <button class="btn-small" id="playersBtn">Players</button>
     <button class="btn-small" id="howToPlayBtn">How to Play</button>
     <button class="btn-small" id="leaderboardBtn">Leaderboard</button>
     <button class="btn-small" id="logoutBtn" style="background: #8b2e2e;">Logout</button>
@@ -535,6 +578,15 @@
     <div id="achievementsProgress">0 / 0 unlocked</div>
     <div id="achievementsGrid"></div>
     <button class="btn" id="achievementsCloseBtn" style="margin-top: 20px; background: #2c3e50;">Close</button>
+</div>
+
+<!-- Players Screen -->
+<div id="playersScreen">
+    <h2>👥 All Players</h2>
+    <div id="playersCount" style="color:#aaa;font-size:16px;margin-bottom:15px;">Loading…</div>
+    <input type="text" id="playersFilterInput" placeholder="Search by name…" autocomplete="off">
+    <div id="playersList"></div>
+    <button class="btn" id="playersCloseBtn" style="margin-top: 20px; background: #2c3e50;">Close</button>
 </div>
 
 <!-- Achievement Toast -->
@@ -2877,6 +2929,112 @@
     document.getElementById('achievementsCloseBtn').addEventListener('click', () => {
         achievementsScreenEl.classList.remove('visible');
     });
+
+    // ============ PLAYERS LIST ============
+    const playersScreenEl = document.getElementById('playersScreen');
+    const playersListEl = document.getElementById('playersList');
+    const playersCountEl = document.getElementById('playersCount');
+    const playersFilterInputEl = document.getElementById('playersFilterInput');
+    let allPlayersCache = null;
+
+    async function renderPlayers() {
+        playersCountEl.textContent = 'Loading…';
+        playersListEl.innerHTML = '';
+        let users;
+        try {
+            users = await fbGet(FB_USERS);
+        } catch (e) {
+            playersCountEl.textContent = 'Offline';
+            return;
+        }
+        if (!users) users = {};
+        const names = Object.keys(users);
+        // Fetch friends list for current user to mark "friend" tag
+        let myFriends = {};
+        try {
+            const f = await fbGet(FB_FRIENDS + '/' + username + '/list');
+            myFriends = f || {};
+        } catch (e) {}
+        allPlayersCache = names.map(n => ({
+            name: n,
+            best: (users[n] && typeof users[n].best === 'number') ? users[n].best : 0,
+            isFriend: !!myFriends[n]
+        })).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+        playersCountEl.textContent = names.length + ' registered players';
+        renderPlayersFiltered();
+    }
+
+    function renderPlayersFiltered() {
+        if (!allPlayersCache) return;
+        const q = (playersFilterInputEl.value || '').trim().toLowerCase();
+        const filtered = q
+            ? allPlayersCache.filter(p => p.name.toLowerCase().includes(q))
+            : allPlayersCache;
+        playersListEl.innerHTML = '';
+        if (filtered.length === 0) {
+            playersListEl.innerHTML = '<div class="friends-empty">No players match</div>';
+            return;
+        }
+        filtered.forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            if (p.name === username) row.classList.add('is-you');
+            else if (p.isFriend) row.classList.add('is-friend');
+            const nameEl = document.createElement('span');
+            nameEl.className = 'p-name';
+            nameEl.textContent = p.name;
+            const best = document.createElement('span');
+            best.className = 'p-best';
+            best.textContent = 'Best: ' + p.best;
+            row.appendChild(nameEl);
+            if (p.name === username) {
+                const tag = document.createElement('span');
+                tag.className = 'p-you-tag';
+                tag.textContent = 'YOU';
+                row.appendChild(tag);
+            } else if (p.isFriend) {
+                const tag = document.createElement('span');
+                tag.className = 'p-friend-tag';
+                tag.textContent = 'FRIEND';
+                row.appendChild(tag);
+            }
+            row.appendChild(best);
+            if (p.name !== username && !p.isFriend) {
+                const add = document.createElement('button');
+                add.className = 'p-add';
+                add.textContent = '+ Add';
+                add.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    add.disabled = true;
+                    add.textContent = 'Sending…';
+                    try {
+                        const msg = await sendFriendRequest(p.name);
+                        add.textContent = msg || 'Sent';
+                    } catch (err) {
+                        add.textContent = (err && err.message) || 'Failed';
+                    }
+                });
+                row.appendChild(add);
+            }
+            // Click row (non-button area) to copy name into add-friend input as a shortcut
+            row.addEventListener('click', () => {
+                if (p.name !== username && addFriendInputEl) {
+                    addFriendInputEl.value = p.name;
+                }
+            });
+            playersListEl.appendChild(row);
+        });
+    }
+
+    document.getElementById('playersBtn').addEventListener('click', () => {
+        playersScreenEl.classList.add('visible');
+        playersFilterInputEl.value = '';
+        renderPlayers();
+    });
+    document.getElementById('playersCloseBtn').addEventListener('click', () => {
+        playersScreenEl.classList.remove('visible');
+    });
+    playersFilterInputEl.addEventListener('input', renderPlayersFiltered);
 
     // Try auto-login on load
     tryAutoLogin();
